@@ -28,3 +28,23 @@ kat comp -t 16 -o A9.homcov90.a50.purge.KAT m64467e_231015_141447.hifi_reads.fas
 kat comp -t 16 -o A9.hom90.p_ctg.KAT  m64467e_231015_141447.hifi_reads.fastq.gz  A9.hom90.p_ctg.fa
 mv A9.homcov90.a50.purge.clip.fasta A9.final.fasta
 
+
+#Now assembly the Massachusetts genome using mostly the same commands with minor tweaks
+
+hifiasm -o M11.homcov --hom-cov 101 -t 40 m64467e_231016_234236.hifi_reads.fastq.gz
+awk '/^S/{print ">"$2;print $3}' M11.homcov.bp.p_ctg.gfa > M11.homcov.p_ctg.fa
+
+minimap2 -t40 -ax map-pb M11.homcov.p_ctg.fa m64467e_231016_234236.hifi_reads.fastq.gz  --secondary=no | samtools sort -m 250G -o M11.homcov.p_ctg.bam -T tmp.ali14
+samtools index M11.homcov.p_ctg.bam
+
+purge_haplotigs hist -b M11.homcov.p_ctg.bam -g M11.homcov.p_ctg.fa
+purge_haplotigs contigcov -i M11.homcov.p_ctg.bam.gencov -j 55 -s 55 -l 25 -m 70 -h 155 -o M11.homcov101.j55s55.cov
+purge_haplotigs purge -t 16 -g M11.homcov.p_ctg.fa -c M11.homcov101.j55s55.cov -a 60 -o M11.homcov101.j55s55.a60.purge
+purge_haplotigs clip -l 4000 -p -t 14  M11.homcov101.j55s55.a60.purge.fasta -h  M11.homcov101.j55s55.a60.purge.haplotigs.fasta -o M11.j55s55.homcov101.a60.purge.clip
+
+mv M11.j55s55.homcov101.a60.purge.clip.fasta  M11.final.fasta
+
+#note that although I only present the code for the final genome assemblies, I changed many parameters in order to find the combination of parameters
+#that resulted in the most contiguous assemblies determined via the kat plots and summary statistics
+
+
