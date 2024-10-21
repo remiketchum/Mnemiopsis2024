@@ -1,0 +1,60 @@
+#Code used to generate MDS plots, Fst Values, and Structure plots
+
+module load anaconda3/
+module load sift4g/2017
+source activate /scratch/rketchu1/software/angsd0.921/
+
+#MAKE MDS PLOTS - feed in LD filtered txt file
+angsd -P 45 -b bam.filt.list -anc A9.final3.fasta -ref A9.final3.fasta -rf chrsA9.txt \
+-out FINAL_MDS_A9 -GL 1 -doGlf 2 -doMajorMinor 1 -doMAF 1 \
+-doGeno 8 -doPost 1 -doIBS 1 -doCounts 1 -doCov 1 -makeMatrix 1 -sites filtldA9.txt
+
+./ngsTools/ngsDist/ngsDist -verbose 1 -geno FINAL_MDS_A9.geno.gz  -probs -n_ind 118 -n_sites 89750 -labels pops.label -o MDS.A9.LD.FILT.gen.dist 
+tail -n +3  MDS.A9.LD.FILT.gen.dist | head -n 118 | Rscript --vanilla --slave ./ngsTools/Scripts/getMDS.R --no_header --data_symm -n 4 -m "mds" -o ./ALL.A9.LDFILT.mds
+
+#GENERATE STRUCTURE PLOTS
+#NGSadmix -likes ./FINAL_MDS_A9.beagle.gz -K 2 -outfiles ./02_NGSADMIX/admix2A9 -P 4 -minMaf 0.05
+#NGSadmix -likes ./FINAL_MDS_A9.beagle.gz -K 3 -outfiles ./02_NGSADMIX/admix3A9 -P 4 -minMaf 0.05 
+#NGSadmix -likes ./FINAL_MDS_A9.beagle.gz -K 4 -outfiles ./02_NGSADMIX/admix4A9 -P 4 -minMaf 0.05 
+#NGSadmix -likes ./FINAL_MDS_A9.beagle.gz -K 5 -outfiles ./02_NGSADMIX/admix5A9 -P 4 -minMaf 0.05 
+NGSadmix -likes ./FINAL_MDS_A9.beagle.gz -K 6 -outfiles ../02_NGSADMIX/admix6A9 -P 4 -minMaf 0.05 
+NGSadmix -likes ./FINAL_MDS_A9.beagle.gz -K 7 -outfiles ../02_NGSADMIX/admix7A9 -P 4 -minMaf 0.05 
+
+########################################
+
+#DO FST CALCS
+#We are first going to do this by comparing northern and southern lineages
+#To do that we have to get them in the correct format - basically a filtered file for both lineages (and LD filtered)
+
+zcat FINAL_MDS_A9.mafs.gz  | cut -f1,2 | tail -89750 > LD.A9.mafs
+
+#Northern Lineage
+angsd -P 48 -b north.bamlist -anc A9.final3.fasta -ref A9.final3.fasta \
+-rf chrs.A9.txt -out FST.N.LDFILT.A9 \
+-GL 1 -doMajorMinor 1 -doMaf 1 -skipTriallelic 1 \
+-doGlf 3  -doSaf 1  -sites LD.A9.mafs
+
+#Southern Lineage
+angsd -P 48 -b south.bamlist -anc A9.final3.fasta -ref A9.final3.fasta \
+-rf chrs.A9.txt -out FST.S.LDFILT.A9 \
+-GL 1 -doMajorMinor 1 -doMaf 1 -skipTriallelic 1 \
+-doGlf 3  -doSaf 1  -sites LD.A9.mafs
+
+#Calculate fsts
+realSFS FST.S.LDFILT.A9.saf.idx FST.N.LDFILT.A9.saf.idx > NORTH.SOUTH.A9.sfs
+#realSFS fst index FST.S.LDFILT.A9.saf.idx FST.N.LDFILT.A9.saf.idx -sfs NORTH.SOUTH.A9.sfs -fstout NORTH.SOUTH.A9.pbs -whichFST 1
+realSFS fst print NORTH.SOUTH.A9.pbs.fst.idx 
+realSFS fst stats NORTH.SOUTH.A9.fst.idx  
+
+#Now do it for each pairwise population
+#most pops have 9 individuals so filtering for 6/9
+
+for POP in FLF FLP FLM GAS GAB MAW NCB NCX NCW VAV NJR MDA SCC
+do
+	echo $POP
+	angsd -P 48 -b $POP.bamlist -ref A9.final3.fasta \
+		-anc A9.final3.fasta \
+		-rf chrsA9pop.txt \
+		-out $POP \
+    -minInd 6 -dosaf 1 -gl 1 -sites LD.A9.mafs
+done
