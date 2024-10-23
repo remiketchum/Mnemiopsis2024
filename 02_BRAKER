@@ -1,0 +1,24 @@
+#ANNOTATE GENOME
+
+module load braker/2.1.5 
+module load samtools/1.11
+module load anaconda3/
+module load rmblast/2.6.0
+module load repeatmasker/4.0.8 
+module load repeatscout/1.0.5 
+module load repeatmodeler/1.0.11 
+
+BuildDatabase -name A9_repeat_db A9.final3.fasta
+RepeatModeler -database A9_repeat_db -engine ncbi -pa 23 &>repeatmodel.A9.out
+RepeatMasker -engine ncbi -pa 23 -s -lib A9_repeat_db-families.fa -gff -dir A9_repeat_db -xsmall A9.final3.fasta
+
+braker.pl --cores=36 \
+--genome=./A9_repeat_db/A9.final3.fasta.masked \
+--workingdir=./05_BRAKER/ \
+--prot_seq=ML2.2.aa  \
+--bam=raw_rnaseq_v_Mgar.v1.sorted.bam \
+--etpmode \
+--softmasking \
+--BAMTOOLS_PATH=${BAMTOOLS}/bin \
+--AUGUSTUS_CONFIG_PATH=${HOME}/augustus_config \
+--ALIGNMENT_TOOL_PATH=${PROTHINT}/bin \
