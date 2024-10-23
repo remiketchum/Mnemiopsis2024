@@ -1,0 +1,18 @@
+#on Joe's HPC I ran xpclr on the same vcf that I used for the fst values (OBX removed) had to run it for each chr. : 
+micromamba activate /bwdata3/jfryan/00-MICROMAMBA/xpclr2
+xpclr --format vcf --input ALLPOP.NOBX.A9.XPCLR.vcf --maxsnps 200 --size 10000 --step 10000 --out ./XP.1 --chr Mgar.v1.001 --samplesA north2 --samplesB south2
+#all.xpclr3 - is output from this but its messy so clean uP:
+
+#edited file in R to remove NA (i think) - all.xpclr5
+#running the following on the whole table:
+#there was still some left over:
+cat all.xpclr5 | grep -v "NA" > all.xpclr6
+
+#from UNCC HPC
+#get file in correct format
+#create intersect file of genes
+#remove duplicates (genes that fall in more than one window)
+cat all.xpclr6 | cut -f4,5,6,12,14 |awk '{print $1,$2-1,$3, $4, $5}' OFS='\t' | grep -v "start"  > xpclrpos.bed
+module load bedtools2/2.29.0 
+bedtools intersect -a augustus.hints.geneonly.gff -b xpclrpos.bed -wa -loj | awk '$3 == "gene"' | sort -k1,1 -k4,4n | awk '$11 > 0' > all.xpclr6.bedtools
+cat all.xpclr6.bedtools | sort -k14,14nr | sort -k9,9 -u | sort -k14,14nr > all.xpclr6.bedtools.sortuniq
