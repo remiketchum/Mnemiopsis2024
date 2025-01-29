@@ -1,49 +1,48 @@
-#SLIDING WINDOW ANALYSES INCLUDING NUCLEOTIDE DIVERSITY, FST, AND DXY CALCS
+# SLIDING WINDOW ANALYSES INCLUDING NUCLEOTIDE DIVERSITY, FST, AND DXY CALCS
 
-#NUCLEOTIDE DIVERSITY
-module load anaconda3/
-source activate /scratch/rketchu1/software/angsd2/
+# NUCLEOTIDE DIVERSITY
 
-#We will first start with the nucleotide diversity sliding window calcs
-#so take the AllSites Filtered Dataset and fold it : 
+# We will first start with the nucleotide diversity sliding window calcs
+# So take the AllSites Filtered Dataset and fold it : 
 realSFS ALLN.ALLSITES.INTERSECFILT.saf.idx -P 48 -fold 1 > allN.ALLSITES.sfs
 realSFS ALLS.ALLSITES.INTERSECFILT.saf.idx -P 48 -fold 1 > allS.ALLSITES.sfs
 
-#calc thetas for each site
+# Calc thetas for each site
 realSFS saf2theta ALLN.ALLSITES.INTERSECFILT.saf.idx -outname allN -sfs allN.ALLSITES.sfs -fold 1
 realSFS saf2theta ALLS.ALLSITES.INTERSECFILT.saf.idx -outname allS -sfs allS.ALLSITES.sfs -fold 1
 
-#Estimate thetas for every scaffold
+# Estimate thetas for every scaffold
 thetaStat do_stat allN.thetas.idx
 thetaStat do_stat allS.thetas.idx
 
-#Do a sliding window analysis
+# Do a sliding window analysis
 thetaStat do_stat allN.thetas.idx -win 10000 -step 10000  -outnames theta10000.allN.allpos.thetasWindow.gz
 thetaStat do_stat allS.thetas.idx -win 10000 -step 10000  -outnames theta10000.allS.allpos.thetasWindow.gz
 
 
-#FST
+# FST
 #Now let's calculate sliding Fsts:
 #This was calculated based on the Population Specific Filtered Datasets
 
-#generate a SFS
+# Generate a SFS
 realSFS ALLS.A9.FILT.saf.idx ALLN.A9.FILT.saf.idx -P 48 > NvS.A9.fst.sfs
 
-#compute per site fst index
+# Compute per site fst index
 realSFS fst index ALLS.A9.FILT.saf.idx ALLN.A9.FILT.saf.idx -sfs NvS.A9.fst.sfs -fstout NvS.A9.fst -whichFST 1
 
 #now use sliding window approach with window size of 10000 and step size of 100
 realSFS fst stats2 NvS.A9.fst.fst.idx -win 10000 -step 100 -whichFST 1 > NvS.A9.fst10k.100.txt
 
 
-#DXY
-#This was calculated using the AllSites Filtered Dataset in R based on: https://github.com/mfumagalli/ngsPopGen/blob/master/scripts/calcDxy.R
+# DXY
+# This was calculated using the AllSites Filtered Dataset in R based on: 
+# https://github.com/mfumagalli/ngsPopGen/blob/master/scripts/calcDxy.R
 
-#Reading data in
+# Reading data in
 allfreqA <- read.table(file = "ALLN.ALLSITES.INTERSECFILT.mafs",sep='\t',row.names=NULL, header=T)
 allfreqB <- read.table(file= "ALLS.ALLSITES.INTERSECFILT.mafs",sep='\t',row.names=NULL, header=T)
 
-### Manipulating the table and printing Dxy table
+# Manipulating the table and printing Dxy table
 allfreqNEW <- merge(allfreqA, allfreqB, by=c("chromo","position"))
 allfreqNEW <- allfreqNEW[order(allfreqNEW$chromo, allfreqNEW$position),]
 
