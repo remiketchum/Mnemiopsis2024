@@ -3,7 +3,7 @@
 module load anaconda3/
 source activate /scratch/rketchu1/software/angsd0.921/
 
-#Filter the entire dataset 
+# Filter the entire dataset 
 angsd -P 48 -b complete.bamlist -ref A9.final3.fasta \
 -anc A9.final3.fasta -out ALLPOP.A9 \
 -uniqueOnly 1 -remove_bads 1 -only_proper_pairs 1 -trim 0 -C 50 -baq 1 \
@@ -11,11 +11,11 @@ angsd -P 48 -b complete.bamlist -ref A9.final3.fasta \
 -GL 1 -doMajorMinor 1 -doMaf 1 -skipTriallelic 1 \
 -doGlf 3  -doSaf 1 -minMaf 0.05 -SNP_pval 1e-6 
 
-#Create the filt file based on the above filtering
+# Create the filt file based on the above filtering
 zcat ALLPOP.A9.mafs.gz | cut -f 1,2 | tail -4867555 > filtA9.txt
 
-#Now filter by population to retain population-specific SNPs
-#Filter nothern lineage first
+# Now filter by population to retain population-specific SNPs
+# Filter nothern lineage first
 angsd -P 48 -b north.bamlist -ref A9.final3.fasta \
 -anc A9.final3.fasta -out northfilt.a9 \
 -uniqueOnly 1 -remove_bads 1 -only_proper_pairs 1 -trim 0 -C 50 -baq 1 \
@@ -23,7 +23,7 @@ angsd -P 48 -b north.bamlist -ref A9.final3.fasta \
 -GL 1 -doMajorMinor 1 -doMaf 1 -skipTriallelic 1 \
 -doGlf 3  -doSaf 1  -sites filtA9.txt
 
-#Filter southern lineage
+# Filter southern lineage
 angsd -P 48 -b south.bamlist  -ref A9.final3.fasta \
 -anc A9.final3.fasta -out southfilt.a9 \
 -uniqueOnly 1 -remove_bads 1 -only_proper_pairs 1 -trim 0 -C 50 -baq 1 \
@@ -31,14 +31,14 @@ angsd -P 48 -b south.bamlist  -ref A9.final3.fasta \
 -GL 1 -doMajorMinor 1 -doMaf 1 -skipTriallelic 1 \
 -doGlf 3  -doSaf 1 -sites filtA9.txt
 
-#Now I want to create a filter file that have the sites that are in both the northern and southern lineage
+# Create a filter file that HAS the sites that are in both the northern and southern lineage
 zcat southfilt.a9.mafs.gz  | cut -f1,2 | sed -E 's/(Mgar.v1.)([0-9]+)(\t)([0-9]+)(.*)/\1\2_\4/' | tail -4407738 > south.edit.a9.mafs
 zcat northfilt.a9.mafs.gz | cut -f1,2 | sed -E 's/(Mgar.v1.)([0-9]+)(\t)([0-9]+)(.*)/\1\2_\4/' | tail -4306620 > north.edit.a9.mafs
 
 join <(sort -k1,1 north.edit.a9.mafs) <(sort -k1,1 south.edit.a9.mafs) > north.south.a9.mafs
 cat north.south.a9.mafs  | sed -E 's/ /\t/g' | cut -f1 | sed -E 's/(Mgar.v1.)([0-9]+)(_)([0-9]+)/\1\2\t\4/' > north.south.edit.a9.mafs
 
-#Now generate two files (one northern one southern) with only shared SNPs 
+# Generate two files (one northern one southern) with only shared SNPs 
 angsd -P 48 -b north.bamlist -anc A9.final3.fasta -ref A9.final3.fasta  \
 -out ALLN.A9.FILT -GL 1 -doPost 1 -doMajorMinor 1 -doMAF 1 -doSaf 1 -sites north.south.edit.a9.mafs
 
