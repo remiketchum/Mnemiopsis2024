@@ -1,6 +1,6 @@
-#Assembling the Florida Mnemiopsis Genome
-#some helpful resources: https://bitbucket.org/mroachawri/purge_haplotigs/src/master/
-#more: https://kat.readthedocs.io/en/latest/walkthrough.html
+# Assembling the Florida Mnemiopsis Genome
+# some helpful resources: https://bitbucket.org/mroachawri/purge_haplotigs/src/master/
+# more: https://kat.readthedocs.io/en/latest/walkthrough.html
 
 module load minimap2/2.18
 module load samtools/1.9
@@ -8,28 +8,29 @@ module load purge_haplotigs/1.1.2
 module load mambaforge/4.14
 module load kat
 
-#run hifiasm
+# Run hifiasm
 hifiasm -o A9.hom90 --hom-cov 90 -t 40 m64467e_231015_141447.hifi_reads.fastq.gz
 awk '/^S/{print ">"$2;print $3}' A9.hom90.bp.p_ctg.gfa > A9.hom90.p_ctg.fa
 
-#map longreads to assembly
+# Map longreads to assembly
 minimap2 -t40 -ax map-pb A9.hom90.p_ctg.fa m64467e_231015_141447.hifi_reads.fastq.gz --secondary=no | samtools sort -m 250G -o A9.hom90.p_ctg.bam -T tmp.ali11
 samtools index A9.hom90.p_ctg.bam
 
-#generate a coverage histogram, then set cutoffs based on that histogram, then analyze coverage by a contig by contig bases and set cutoffs, then trim overlapping contig ends
+# Generate a coverage histogram, then set cutoffs based on that histogram
+# then analyze coverage by a contig by contig bases and set cutoffs, then trim overlapping contig ends
 purge_haplotigs hist -b A9.hom90.p_ctg.bam -g A9.hom90.p_ctg.fa -t 16
 purge_haplotigs contigcov -i A9.hom90.p_ctg.bam.gencov -l 10 -m 70 -h 175 -o A9.homcov90.cov
 purge_haplotigs purge -t 16 -g A9.hom90.p_ctg.fa -c A9.homcov90.cov -a 50 -o A9.homcov90.a50.purge
 purge_haplotigs clip -t 16 -l 5000 -p A9.homcov90.a50.purge.fasta -h  A9.homcov90.a50.purge.haplotigs.fasta -o A9.homcov90.a50.purge.clip
 
-#use kmer spectra plots to analyze each step of the genome assembly process 
+# Use kmer spectra plots to analyze each step of the genome assembly process 
 kat comp -t 16 -o A9.homcov90.a50.purge.clip.KAT m64467e_231015_141447.hifi_reads.fastq.gz A9.homcov90.a50.purge.clip.fasta
 kat comp -t 16 -o A9.homcov90.a50.purge.KAT m64467e_231015_141447.hifi_reads.fastq.gz A9.homcov90.a50.purge.fasta
 kat comp -t 16 -o A9.hom90.p_ctg.KAT  m64467e_231015_141447.hifi_reads.fastq.gz  A9.hom90.p_ctg.fa
 mv A9.homcov90.a50.purge.clip.fasta A9.final.fasta
 
 
-#Now assembly the Massachusetts genome using mostly the same commands with minor tweaks
+# Now assembly the Massachusetts genome using mostly the same commands with minor tweaks
 
 hifiasm -o M11.homcov --hom-cov 101 -t 40 m64467e_231016_234236.hifi_reads.fastq.gz
 awk '/^S/{print ">"$2;print $3}' M11.homcov.bp.p_ctg.gfa > M11.homcov.p_ctg.fa
@@ -44,7 +45,8 @@ purge_haplotigs clip -l 4000 -p -t 14  M11.homcov101.j55s55.a60.purge.fasta -h  
 
 mv M11.j55s55.homcov101.a60.purge.clip.fasta  M11.final.fasta
 
-#note that although I only present the code for the final genome assemblies, I changed many parameters in order to find the combination of parameters
-#that resulted in the most contiguous assemblies determined via the kat plots and summary statistics
+# note that although I only present the code for the final genome assemblies, 
+# I changed many parameters in order to find the combination of parameters
+# that resulted in the most contiguous assemblies determined via the kat plots and summary statistics
 
 
