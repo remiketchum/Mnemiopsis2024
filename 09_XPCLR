@@ -1,7 +1,8 @@
-#GENERATE XPCLR VALUES
+# GENERATE XPCLR VALUES
 
 micromamba activate /location/xpclr2
 
-#run it (note I removed the Outer Banks samples for this analysis as they were hybrids
-#I also needed to run this for each individual scaffold
-xpclr --format vcf --input ALLPOP.NOBX.A9.XPCLR.vcf --maxsnps 200 --size 10000 --step 10000 --out ./XP.1 --chr Mgar.v1.001 --samplesA north2 --samplesB south2
+# run it (note I removed the Outer Banks samples for this analysis as they were hybrids
+# I also needed to run this for each individual scaffold
+xpclr --format vcf --input ALLPOP.NOBX.A9.XPCLR.vcf --maxsnps 200 --size 10000 --step 10000 \
+--out ./XP.1 --chr Mgar.v1.001 --samplesA north2 --samplesB south2
