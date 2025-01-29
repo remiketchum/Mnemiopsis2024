@@ -1,6 +1,7 @@
-#The code to generate a LD filtered dataset, I generally followed this protocol: https://github.com/nt246/lcwgs-guide-tutorial/tree/main?tab=readme-ov-file
+# The code to generate a LD filtered dataset
+# I generally followed this protocol: https://github.com/nt246/lcwgs-guide-tutorial/tree/main?tab=readme-ov-file
 
-#do some filtering on the whole dataset:
+# Do some filtering on the whole dataset:
 
 angsd -P 48 -b complete.bamlist -ref A9.final3.fasta \
 -out LD_A9_R1 -uniqueOnly 1 -remove_bads 1 -only_proper_pairs 1 -trim 0 \
@@ -8,11 +9,11 @@ angsd -P 48 -b complete.bamlist -ref A9.final3.fasta \
 -setMaxDepth 2360 -doCounts 1 -GL 1 -doMajorMinor 1 -doMaf 1 \
 -skipTriallelic 1 -doGlf 2 -minMaf 0.05 -SNP_pval 1e-6
 
-#subsample the filtered angsd file
-#zcat LD_A9_R1.beagle.gz |  awk 'NR % 50 == 0' | cut -f 4- | gzip > subsampled.A9.beagle.gz
-#zcat LD_A9_R1.mafs.gz | cut -f 1,2 |  awk 'NR % 50 == 0' | sed 's/:/_/g'| gzip > subsampled.A9.pos.gz
+# Subsample the filtered angsd file
+zcat LD_A9_R1.beagle.gz |  awk 'NR % 50 == 0' | cut -f 4- | gzip > subsampled.A9.beagle.gz
+zcat LD_A9_R1.mafs.gz | cut -f 1,2 |  awk 'NR % 50 == 0' | sed 's/:/_/g'| gzip > subsampled.A9.pos.gz
 
-#run ngsLD
+# Run ngsLD
 ngsLD \
 --geno  subsampled.M11.beagle.gz \
 --pos  subsampled.M11.pos.gz \
@@ -23,26 +24,27 @@ ngsLD \
 --n_threads 48 \
 --out ./ngsLD10-A9-subsampled.ld 
 
-#filter positions in LD 
+# Filter positions in LD 
 perl ./ngsTools/ngsLD/scripts/prune_graph.pl \
 --in_file ngsLD10-A9-subsampled.ld \
 --max_kb_dist 10 \
 --min_weight 0.5 \
 --out LDngs10_A9_subsampled_unlinked.id
 
-#get files in good format for join command which will create a file that can be used for filtering 
+# Get files in format for join command which will create a file that can be used for filtering 
+# This is a big ugly ..
 zcat LD_A9_R1.mafs.gz | tail -4851457 | cut -f1,2 | sed -E 's/(Mgar.v1.)(.*)(\t)(.*)/\1\2:\4/' > NEWCOL
 zcat LD_A9_R1.mafs.gz | tail -4851457 | cut -f3,4,5,6,7,8 > LD_FILT3_tmp.mafs
 paste NEWCOL LD_FILT3_tmp.mafs > LD_FILT3_FINAL.A9.mafs
 join <(sort -k1,1 LDngs10_A9_subsampled_unlinked.id) <(sort -k1,1 LD_FILT3_FINAL.A9.mafs) > LD_FILT_FINAL_A9.mafs
 
-#make filt.txt file based off of LD_FILT_FINAL_A9.mafs
+# Make filt.txt file based off of LD_FILT_FINAL_A9.mafs
 cat LD_FILT_FINAL_A9.mafs | sed -E 's/ /\t/g' | cut -f1 | sed -E 's/:/\t/' > filtldA9.txt
 
-#index the file
+# Index the file
 angsd sites index filtldA9.txt
 
-#get it back into angsd format with the LD filt file
+# Get it back into angsd format with the LD filt file
 angsd -P 45 -b bam.list -anc A9.final3.fasta \
 -ref A9.final3.fasta -rf chrsA9.txt -out FINALA9 -GL 1 -doGlf 2 -doMajorMinor 1 -doMAF 1 \
 -doPost 1 -doIBS 1 -doCounts 1 -doCov 1 -makeMatrix 1 -sites filtldA9.txt
