@@ -1,4 +1,4 @@
-# The code to generate a LD filtered dataset
+# GENERATE THE LD FILTERED DATASET 
 # I generally followed this protocol: https://github.com/nt246/lcwgs-guide-tutorial/tree/main?tab=readme-ov-file
 
 # Do some filtering on the whole dataset:
