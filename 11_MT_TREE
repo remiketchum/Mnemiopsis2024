@@ -1,0 +1,17 @@
+# Generate mitochondrial tree
+
+
+# Run NovoPlasty to get mtgenome out of fastq sequences
+# Need to generate a config file to do so (https://github.com/ndierckx/NOVOPlasty)
+cat sample.config.txt | parallel -j 16 NOVOPlasty.pl -c {1}
+
+# Run mars so each mtgenome starts at the same start site
+mars -a DNA -m 1 -i input.mtdna.fasta -o output.mtdna.mars.fasta -l 100 -P 1 -T 200
+
+# Generate alignment
+mafft --auto input.mtdna.mars.fasta > output.mtdna.mars.mafft.fasta
+
+# Generate tree
+iqtree -s input.mtdna.mars.mafft.fasta -pre output.tree
+
+
