@@ -1,15 +1,11 @@
-#GENERATE STAIRWAY PLOTS
-#Note that I used the AllSites Filtered dataset for this analysis
-
-module load anaconda3/
-source activate /scratch/rketchu1/software/angsd2/
+# STAIRWAY PLOTS
+# Note that I used the AllSites Filtered dataset for this analysis
 
 realSFS ALLN.ALLSITES.INTERSECFILT.saf.idx -P 48 -fold 1 > allN.ALLSITES.sfs
 realSFS ALLS.ALLSITES.INTERSECFILT.saf.idx -P 48 -fold 1 > allS.ALLSITES.sfs
 
-#to get stairway running, you first need to edit the blueprint files with the relevant information 
-#ie number of individuals, number of positions etc
-
+# To get stairway running, you first need to edit the blueprint files with the relevant information 
+# IE the number of individuals, number of positions etc
 java -cp stairway_plot_es/ Stairbuilder two-epoch_fold_S.blueprint
 
 #then edit the two-epoch_fold_S.blueprint.sh files to have a header that will allow you to sbatch
