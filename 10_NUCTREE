@@ -1,4 +1,4 @@
-#GENERATE NUCL TREE
+# GENERATE NUCL TREE
 
 module load anaconda3/
 source activate /scratch/rketchu1/software/fastme/
@@ -8,29 +8,30 @@ module load bwa/0.7.12
 source activate /scratch/rketchu1/software/sambamba/
 source activate /scratch/rketchu1/software/bamutil/
 
-#Download genome Bolinopsis: https://www.ncbi.nlm.nih.gov/sra/SRX14647678
+# Download genome Bolinopsis: https://www.ncbi.nlm.nih.gov/sra/SRX14647678
 cat SRR18516518_1.fastq SRR18516519_1.fastq > bolino.inf.1.fastq
 cat SRR18516518_2.fastq SRR18516519_2.fastq > bolino.inf.2.fastq
 
-#Run trimmomatic same as other samples:
+# Run trimmomatic same as other samples:
 java -jar /apps/pkg/trimmomatic/0.39/trimmomatic-0.39.jar PE -threads 1 -phred33 bolino.inf.1.fastq bolino.inf.2.fastq bolino.inf.trimm.1.fastq bolino.unpr1.fastq bolino.inf.trimm.2.fastq bolino.unpr2.fastq ILLUMINACLIP:/apps/pkg/trimmomatic/0.39/adapters/TruSeq3-PE-2.fa:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36
 
-#Align to genome
+# Align to genome
 bwa mem ../A9.final3.fasta bolino.inf.trimm.1.fastq bolino.inf.trimm.2.fastq -R "@RG\tID:"bolinoinf"\tSM:"bolinoinf"\t"| samtools view -bh - > bolino.info.bam
 
-#sort and filt for quality for all
+# Sort and filt for quality for all
 samtools view -q 30 -@2 -bh bolino.info.bam | samtools sort -@2 -o -> bolino.q30.sort.bam 
 
-#mark duplicates
+# Mark duplicates
 sambamba markdup -t 1 bolino.q30.sort.bam bolino.q30.sort.md.bam 
 
-#clip overlaps for all
+# Clip overlaps for all
 bam clipOverlap --in bolino.q30.sort.md.bam --out bolino.q30.md.sort.clip.bam --stats 
 
-#index files
+# Index files
 samtools index bolino.q30.md.sort.clip.bam 
 
-#Generate angsd output with all other Mnemiopsis samples + Bolinopsis so we can generate a tree with Bolinopsis as the outgroup
+# Generate angsd output with all other Mnemiopsis samples + Bolinopsis so 
+# we can generate a tree with Bolinopsis as the outgroup
 angsd -P 48 -b bam.filt.withbolino.list \
 -ref A9.final3.fasta -anc A9.final3.fasta \
 -out angsd.A9.bolino \
@@ -39,7 +40,7 @@ angsd -P 48 -b bam.filt.withbolino.list \
 -GL 1 -doMajorMinor 1 -doMaf 1 -skipTriallelic 1 \
 -doGlf 2 -doGeno 8 -doPost 1  -doSaf 1 -minMaf 0.05 -SNP_pval 1e-6
 
-#Generate tree
+# Generate tree
 ../ngsTools/ngsDist/ngsDist -verbose 1 -geno angsd.A9.bolino.geno.gz -probs -n_ind 119 -n_sites 1302 -labels pops.label -o tree.a9.bolino.boot.dist -n_threads 24 -n_boot_rep 100 -boot_block_size 20
 fastme -D 101 -i tree.a9.bolino.boot.dist -o testA_8B.nwk -m b -n b -s 
 head -n 1 testA_8B.nwk > testA_8B.main.nwk
