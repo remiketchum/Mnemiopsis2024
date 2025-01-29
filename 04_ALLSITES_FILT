@@ -1,28 +1,28 @@
-#GENERATE ALLSITES DATASET: KEEPS ALL INVARIANT AND VARIANT SITES
+# GENERATE ALLSITES DATASET: KEEPS ALL INVARIANT AND VARIANT SITES
 
-#First need to filter each pop independently and then create a shared positions file
-#Do it first for northern lineage
+# First need to filter each lineage independently and then create a shared positions file
+# Do it first for northern lineage
 angsd -P 48 -b north.bamlist -anc A9.final3.fasta \
 -ref A9.final3.fasta -uniqueOnly 1 -remove_bads 1 -only_proper_pairs 1 -trim 0 -C 50 -baq 1 \
 -minMapQ 20 -minQ 20 -minInd 36 -setMinDepth 108 -setMaxDepth 900 -doCounts 1 \
 -GL 1 -doSaf 1 -out ALLN.ALLSITES.A9.NUCDIV
 
-#Now do it for southern lineage
+# Now do it for southern lineage
 angsd -P 48 -b south.bamlist -anc A9.final3.fasta -ref A9.final3.fasta \
 -uniqueOnly 1 -remove_bads 1 -only_proper_pairs 1 -trim 0 -C 50 -baq 1 \
 -minMapQ 20 -minQ 20 -minInd 58 -setMinDepth 175 -setMaxDepth 1460 -doCounts 1 \
 -GL 1 -doSaf 1 -out ALLS.ALLSITES.A9.NUCDIV
 
-#start creating an intersect file that will later be used for filtering:
+# Start creating an intersect file that will later be used for filtering:
 realSFS print ALLN.ALLSITES.A9.NUCDIV.saf.idx ALLS.ALLSITES.A9.NUCDIV.saf.idx | cut -f 1-2 > intersect.txt
 
-#now generate a northern lineage dataset but only with the filtered positions
+# Now generate a northern lineage dataset but only with the filtered positions
 angsd -P 48 -b north.bamlist -anc A9.final3.fasta -ref A9.final3.fasta \
 -out ALLN.ALLSITES.INTERSECFILT -GL 1 -doPost 1 -doMajorMinor 1 -doMAF 1 -doSaf 1 -sites intersect.txt
 
-#do same for south 
+# Do same for south 
 angsd -P 48 -b south.bamlist -anc A9.final3.fasta -ref A9.final3.fasta \ 
 -out ALLS.ALLSITES.INTERSECFILT -GL 1 \
 -doPost 1 -doMajorMinor 1 -doMAF 1  -doSaf 1 -sites intersect.txt
 
-#These two files are what I refer to as the AllSites Filtered Dataset
+#These two files are what I refer to as the AllSites Filtered Dataset 
