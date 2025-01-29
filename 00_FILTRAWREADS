@@ -1,40 +1,40 @@
-#FILTER THE RAW SEQUENCES PRIOR TO DOING ANYTHING ELSE
+# FILTER THE RAW SEQUENCES
 
-#generate code to run trimm on each individual
-ls /bwdata3/jfryan/00-DATA/BaseSpace/NS3034_REDO/NS3034-JRyan_S4-HHKC5DSX5-Lane1-376671297/*/*/*R2_0*.gz > list
-cat list | sed -E 's|(.*/)([A-Z]+[0-9]+)(_S.*)R2(.*)|java -jar /usr/local/Trimmomatic-0.39/trimmomatic-0.39.jar PE -threads 1 -phred33 \1\2\3R1\4 \1\2\3R2\4 \2.TRIMM.R1.fq.gz \2.TRIMM.UNP1.fq.gz \2.TRIMM.R2.fq.gz \2.TRIMM.UNP2.fq.gz ILLUMINACLIP:/usr/local/Trimmomatic-0.39/adapters/TruSeq3-PE-2.fa:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36 1> trimmo.\2.stdout 2> trimmo.\2.err \&| ' > trimmscript.sh
+# Run trimm on each individual
+java -jar ./trimmomatic-0.39.jar PE -threads 1 -phred33 INPUT.R1 INPUT.R2 OUTPUT.TRIMM.R1.fq.gz \
+OUTPUT.TRIMM.UNP1.fq.gz OUTPUT.TRIMM.R2.fq.gz OUTPUT.TRIMM.UNP2.fq.gz \
+ILLUMINACLIP:/usr/local/Trimmomatic-0.39/adapters/TruSeq3-PE-2.fa:2:30:10 \
+LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36
 
-#Align reads to genome
+# Align reads to genome
 bwa index A9.final3.fasta
 
 while read samples; 
-do bwa mem -t 200 A9.final3.fasta ../01-TRIMMO/$samples.TRIMM.R1.fq.gz ../01-TRIMMO/$samples.TRIMM.R2.fq.gz -R "@RG\tID:"$samples"\tSM:"$samples"\t" | samtools view -bh - > $samples.bam; 
+	do bwa mem -t 200 A9.final3.fasta $samples.TRIMM.R1.fq.gz $samples.TRIMM.R2.fq.gz \
+	-R "@RG\tID:"$samples"\tSM:"$samples"\t" | samtools view -bh - > $samples.bam; 
 done < samples
 
-#Run samtools to sort files
-samtools sort  FLF10.bam -o FLF10.sorted.bam &
+# Sort files
+samtools sort  $sample.bam -o $sample.sorted.bam 
 
-#Quick filtering step that removes any alignment with a quality score <30
+# Quick filtering step that removes any alignment with a quality score <30
 while read sample; do
-		samtools view -q 30 -@24 -bh $samples.bam | samtools sort -@24 -o - > $sample.q30.sort.bam
+		samtools view -q 30 -@24 -bh $sample.bam | samtools sort -@24 -o - > $sample.q30.sort.bam
 		samtools index -@24 $sample.q30.sort.bam
-done < samples
+done < sample
 
-#Remove PCR dups from bams 
-source activate /scratch/rketchu1/software/sambamba/
+# Remove PCR dups
+source activate sambamba/
 
 while read sample
-do sambamba markdup -t 20 ./$sample ./MARKDP/$sample.md
+	do sambamba markdup -t 20 ./$sample $sample.md
 done < bam.list
 
-#Clip off overlaps in reads
-#then index those bams 
+# Clip off overlaps in reads, then index those bams 
 while read sample
-do
-bam clipOverlap --in ./$sample.bam.md --out ./$sample.md.cover.bam --stats
+	do bam clipOverlap --in ./$sample.bam.md --out ./$sample.md.cover.bam --stats
 done < sample.list
 
 while read sample 
-do
-samtools index ./$sample.md.cover.bam
+	do samtools index ./$sample.md.cover.bam
 done < sample.list
